@@ -1,46 +1,24 @@
 import { config } from "../config/dotenv";
 import { fetchJSON } from "./utils";
 
-export const exchangeCodeForAccessToken = async (
+/**
+ * Returns a long-lived user access token (expires in ~60 days)
+ */
+export async function exchangeCodeForAccessToken(
     code: string,
-): Promise<string> => {
-    const tokenURL =
-        "https://graph.facebook.com/v20.0/oauth/access_token" +
-        `?client_id=${config.FACEBOOK_CLIENT_ID}` +
-        `&redirect_uri=${encodeURIComponent(config.REDIRECT_URI)}` +
-        `&client_secret=${config.FACEBOOK_CLIENT_SECRET}` +
+): Promise<string | Object> {
+    const url =
+        config.FACEBOOK_API_URL +
+        "/oauth/access_token?" +
+        `client_id=${config.FACEBOOK_APP_ID}` +
+        `&redirect_uri=${config.REDIRECT_URI}` +
+        `&client_secret=${config.FACEBOOK_APP_SECRET}` +
         `&code=${code}`;
 
-    const tokenData = await fetchJSON(tokenURL);
+    const response = await fetchJSON(url);
+    console.log("access token response: ", response);
 
-    if (!tokenData.access_token)
-        throw new Error("Failed to get short-lived token");
+    return response;
+}
 
-    return tokenData.access_token;
-};
-
-export const exchangeShortLivedTokenForLongLivedToken = async (
-    shortLivedToken: string,
-): Promise<string> => {
-    const longLivedTokenURL =
-        "https://graph.facebook.com/v20.0/oauth/access_token" +
-        "?grant_type=fb_exchange_token" +
-        `&client_id=${config.FACEBOOK_CLIENT_ID}` +
-        `&client_secret=${config.FACEBOOK_CLIENT_SECRET}` +
-        `&fb_exchange_token=${shortLivedToken}`;
-
-    const longLivedTokenData = await fetchJSON(longLivedTokenURL);
-
-    if (!longLivedTokenData.access_token)
-        throw new Error("Failed to get long-lived user token");
-
-    return longLivedTokenData.access_token;
-};
-
-export const getUserPages = async (accessToken: string) => {
-    const pagesURL = `https://graph.facebook.com/v20.0/me/accounts?fields=id,name,picture&access_token=${accessToken}`;
-
-    const pagesData = await fetchJSON(pagesURL);
-    console.log("Got pages data: ", pagesData);
-    return pagesData.data || [];
-};
+export async function getFacebookPages(userId: string, userAccessToken: string);

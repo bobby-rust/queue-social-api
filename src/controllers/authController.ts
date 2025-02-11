@@ -1,62 +1,28 @@
 import { Request, Response } from "express";
 import { config } from "../config/dotenv";
-import {
-    exchangeCodeForAccessToken,
-    exchangeShortLivedTokenForLongLivedToken,
-    getUserPages,
-} from "../lib/facebook_api";
 import { FacebookLoginResponse } from "../types";
+import { exchangeCodeForAccessToken } from "../lib/facebook_api";
 
-export const login = (_: Request, res: Response) => {
-    const facebookAuthUrl =
-        "https://www.facebook.com/v20.0/dialog/oauth" +
-        `?client_id=${config.FACEBOOK_CLIENT_ID}` +
+export function login(req: Request, res: Response) {
+    const fbLoginUrl =
+        config.FACEBOOK_LOGIN_URL +
+        "/dialog/oauth?" +
+        `client_id=${config.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(config.REDIRECT_URI)}` +
-        "&scope=pages_manage_posts,pages_read_engagement,pages_show_list";
+        "&scope=pages_manage_posts,pages_show_list,email,public_profile" +
+        "&response_type=code";
 
-    console.log("Passing callback uri: ", config.REDIRECT_URI);
-    res.redirect(facebookAuthUrl);
-};
+    return res.redirect(fbLoginUrl);
+}
 
-/**
- * Controller for handling the OAuth callback
- */
-export const callback = async (
-    req: Request,
-    res: Response,
-): Promise<FacebookLoginResponse> => {
-    console.log("Running callback");
-    // Facebook gives a code param in the callback URL
-    // which can be used to obtain an access token
-    const code: string | undefined = req.query.code as string;
+export async function callback(req: Request, res: Response) {
+    console.log("In callback");
+    const code: string = req.query.code as string;
+    console.log("Got query: ", req.query);
 
-    console.log("Got code: ", code);
-    if (!code) {
-        res.status(400);
-        console.log("Callback code not found");
-        return {
-            error: "Callback code not found",
-        };
-    }
+    if (!code) console.error("No callback code found");
+    const response = await exchangeCodeForAccessToken(code);
 
-    try {
-        const shortLivedToken = await exchangeCodeForAccessToken(code);
-
-        const longLivedToken =
-            await exchangeShortLivedTokenForLongLivedToken(shortLivedToken);
-
-        const pages = await getUserPages(longLivedToken);
-
-        res.status(200);
-        console.log("Returning pages data: ", pages);
-        return {
-            userAccessToken: longLivedToken,
-            pages,
-        };
-    } catch (error) {
-        res.status(500);
-        return {
-            error: error as string,
-        };
-    }
-};
+    res.status(200);
+    return res.send(response);
+}
