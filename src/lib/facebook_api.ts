@@ -5,7 +5,7 @@ export const exchangeCodeForAccessToken = async (
     code: string,
 ): Promise<string> => {
     const tokenURL =
-        "https://graph.facebook.com/v19.0/oauth/access_token" +
+        "https://graph.facebook.com/v20.0/oauth/access_token" +
         `?client_id=${config.FACEBOOK_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(config.REDIRECT_URI)}` +
         `&client_secret=${config.FACEBOOK_CLIENT_SECRET}` +
@@ -23,7 +23,7 @@ export const exchangeShortLivedTokenForLongLivedToken = async (
     shortLivedToken: string,
 ): Promise<string> => {
     const longLivedTokenURL =
-        "https://graph.facebook.com/v19.0/oauth/access_token" +
+        "https://graph.facebook.com/v20.0/oauth/access_token" +
         "?grant_type=fb_exchange_token" +
         `&client_id=${config.FACEBOOK_CLIENT_ID}` +
         `&client_secret=${config.FACEBOOK_CLIENT_SECRET}` +
@@ -38,9 +38,9 @@ export const exchangeShortLivedTokenForLongLivedToken = async (
 };
 
 export const getUserPages = async (accessToken: string) => {
-    const pagesURL = `https://graph.facebook.com/v19.0/me/accounts?fields=id,name,picture&access_token=${accessToken}`;
+    const pagesURL = `https://graph.facebook.com/v20.0/me/accounts?fields=id,name,picture&access_token=${accessToken}`;
 
     const pagesData = await fetchJSON(pagesURL);
-
+    console.log("Got pages data: ", pagesData);
     return pagesData.data || [];
 };

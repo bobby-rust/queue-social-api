@@ -5,6 +5,9 @@
         "strict": true,
         "outDir": "dist",
         "rootDir": "src",
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "types": [
+            "node"
+        ]
     }
 }

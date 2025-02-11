@@ -1,6 +1,15 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 
-const UserSchema = new mongoose.Schema({
+interface IUser extends Document {
+    facebookUserId: string;
+    name: string;
+    email: string;
+    profilePicture: string;
+    accessToken: string;
+    pageTokens: { pageId: string; accessToken: string }[];
+}
+
+const UserSchema = new mongoose.Schema<IUser>({
     facebookUserId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -9,4 +18,4 @@ const UserSchema = new mongoose.Schema({
     pageTokens: [{ pageId: String, accessToken: String }],
 });
 
-export const User = mongoose.model("User", UserSchema);
+export const User = mongoose.model<IUser>("User", UserSchema);
