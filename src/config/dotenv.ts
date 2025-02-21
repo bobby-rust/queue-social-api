@@ -10,4 +10,5 @@ export const config = {
     MONGODB_URI: process.env.MONGODB_URI!,
     FACEBOOK_API_URL: process.env.FACEBOOK_API_URL!,
     FACEBOOK_LOGIN_URL: process.env.FACEBOOK_LOGIN_URL!,
+    API_VERSION: "v1",
 };

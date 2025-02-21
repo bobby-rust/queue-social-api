@@ -1,31 +1,70 @@
 import { Request, Response } from "express";
-import { config } from "../config/dotenv";
-import { getFacebookPagePicture, getFacebookPages } from "../lib/facebook_api";
+import { User } from "../models/User";
+import bcrypt from "bcryptjs";
 
-export function login(req: Request, res: Response) {
-    const fbLoginUrl =
-        config.FACEBOOK_LOGIN_URL +
-        "/dialog/oauth?" +
-        `client_id=${config.FACEBOOK_APP_ID}` +
-        `&redirect_uri=${encodeURIComponent(config.REDIRECT_URI)}` +
-        "&scope=pages_manage_metadata,pages_manage_posts,pages_show_list,email,public_profile,pages_manage_engagement,pages_read_engagement" +
-        "&response_type=code";
+export async function login(req: Request, res: Response) {
+    console.log(req.body);
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res
+            .status(400)
+            .json({ message: "Please provide both a username and a password" });
+    }
 
-    return res.redirect(fbLoginUrl);
+    try {
+        const user = await User.findOne({
+            username: req.body.username,
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const passwordIsValid = bcrypt.compareSync(password, user.password);
+        if (!passwordIsValid) {
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        return res.status(200).json({
+            data: {
+                user: {
+                    username: user.username,
+                    email: user.email,
+                },
+            },
+        });
+    } catch (e: any) {
+        console.log(e);
+    }
 }
 
-export async function callback(req: Request, res: Response) {
-    const code = req.query.code as string;
-    if (!code) console.error("No callback code found");
+export async function signUp(req: Request, res: Response) {
+    const { username, email, password } = req.body;
+    if (!username || !email || !password) {
+        return res
+            .status(400) // 400 Bad Request
+            .json({ error: "Please provide a username, password, and email" });
+    }
 
-    const pages = await getFacebookPages(code);
-    console.log(pages);
+    try {
+        const user = await User.create({
+            username: username,
+            email: email,
+            password: bcrypt.hashSync(password, 8),
+            facebookUserId: null,
+            accessToken: null,
+            profilePicture: null,
+        });
 
-    const pageId = pages[1].id;
-    const pageAccessToken = pages[1].access_token;
+        return res
+            .status(201) // 201 Created
+            .json({ message: "User successfully registered" });
+    } catch (e: any) {
+        console.log(e);
+        return res.status(500).json({ error: e }); // 500 Internal Server Error
+    }
+}
 
-    const pageInfo = await getFacebookPagePicture(pageId, pageAccessToken);
-    console.log("Got page info: ", pageInfo);
-
-    return res.status(200).json(pageInfo);
+export async function logout() {
+    // TODO
 }
