@@ -11,4 +11,6 @@ export const config = {
     FACEBOOK_API_URL: process.env.FACEBOOK_API_URL!,
     FACEBOOK_LOGIN_URL: process.env.FACEBOOK_LOGIN_URL!,
     API_VERSION: "v1",
+    JWT_SECRET: process.env.JWT_SECRET!,
+    COOKIE_SECRET: process.env.COOKIE_SECRET!,
 };
