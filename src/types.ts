@@ -17,3 +17,10 @@ export type FacebookLoginResponse =
         pages: FacebookPageResponse[];
     }
     | { error: string };
+
+export interface Post {
+    pageId: string;
+    text: string;
+    image?: string;
+    scheduledPublishTime: string;
+}

@@ -7,6 +7,7 @@ import cookieSession from "cookie-session";
 const app: Application = express();
 
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+
 // Parse requests of content-type application/json
 app.use(express.json());
 // Parse requests of content-type application/x-www-form-urlencoded

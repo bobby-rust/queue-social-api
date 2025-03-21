@@ -6,8 +6,6 @@ import { config } from "../config/dotenv";
 
 export default class AuthController {
     async login(req: Request, res: Response) {
-        console.log("req.body: ", req.body);
-        console.log("Request session: ", req.session);
         const { username, password } = req.body;
         if (!username || !password) {
             return res.status(400).json({
@@ -68,6 +66,8 @@ export default class AuthController {
 
     async signUp(req: Request, res: Response) {
         const { username, email, password } = req.body;
+        console.log(req);
+        console.log(req.body);
         if (!username || !email || !password) {
             return res
                 .status(400) // 400 Bad Request

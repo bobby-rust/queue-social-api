@@ -5,6 +5,7 @@
 import { config } from "../config/dotenv";
 import { fetchJSON } from "../lib/utils";
 import { Request, Response } from "express";
+import { Post } from "../types";
 
 export default class FacebookService {
     apiUrl: string = config.FACEBOOK_API_URL;
@@ -66,23 +67,24 @@ export default class FacebookService {
      * The scheduled publish time must be an integer UNIX timestamp [in seconds],
      * an ISO 8061 timestamp string, or any string parsable by PHP's strtotime()
      */
-    async createPost(
-        pageId: string,
-        message: string,
-        scheduled_publish_time: string,
-    ) {
-        const url = this.apiUrl + `/${pageId}/feed`;
+    async createPost(post: Post) {
+        const url = this.apiUrl + `/${post.pageId}/feed`;
         const response = await fetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                message: message,
+                message: post.text,
                 published: false,
-                scheduled_publish_time: scheduled_publish_time,
+                scheduled_publish_time: post.scheduledPublishTime,
             }),
         });
+
+        // TODO: If response was successful, add the post to our database
+
+        console.log(response);
+        return response;
     }
 
     /**
