@@ -47,4 +47,8 @@ export default class FacebookController {
             .status(201)
             .json({ data: { success: true, message: "Post scheduled" } });
     }
+
+    async linkAccount(req: Request, res: Response) {
+        const response = await this.fbService.login(res.redirect);
+    }
 }

@@ -14,7 +14,7 @@ export default class FacebookService {
      * Logs a user into their Facebook account
      * to get access to their pages
      */
-    async login(req: Request, res: Response) {
+    async login(redirect: (url: string) => void) {
         const fbLoginUrl =
             config.FACEBOOK_LOGIN_URL +
             "/dialog/oauth?" +
@@ -23,7 +23,7 @@ export default class FacebookService {
             "&scope=pages_manage_metadata,pages_manage_posts,pages_show_list,email,public_profile,pages_manage_engagement,pages_read_engagement" +
             "&response_type=code";
 
-        return res.redirect(fbLoginUrl);
+        return redirect(fbLoginUrl);
     }
 
     /**

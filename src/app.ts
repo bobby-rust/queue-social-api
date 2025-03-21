@@ -1,5 +1,6 @@
 import express, { Application } from "express";
 import authRoutes from "./routes/authRoutes";
+import fbRoutes from "./routes/fbRoutes";
 import { config } from "./config/dotenv";
 import cors from "cors";
 import cookieSession from "cookie-session";
@@ -24,6 +25,7 @@ app.use(
 
 const router = express.Router();
 router.use("/auth", authRoutes);
+router.use("/fb", fbRoutes);
 
 app.use(`/api/${config.API_VERSION}`, router);
 
