@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { config } from "../config/dotenv";
 import FacebookService from "../services/facebookService";
+import { Post } from "../types";
 
 export default class FacebookController {
     fbService = new FacebookService();
 
     async createPost(req: Request, res: Response) {
-        const { pageId, text, image, scheduledPublishTime } = req.body;
+        const { pageId, text, imageUrl, scheduledPublishTime } = req.body;
         if (!pageId) {
             return res.status(400).json({
                 data: {
@@ -15,7 +15,7 @@ export default class FacebookController {
                 },
             });
         }
-        if (!text && !image) {
+        if (!text && !imageUrl) {
             return res.status(400).json({
                 data: {
                     success: false,
@@ -33,14 +33,19 @@ export default class FacebookController {
             });
         }
 
-        const post = {
+        const post: Post = {
             pageId: pageId,
             text: text,
-            image: image,
+            imageUrl: imageUrl,
             scheduledPublishTime: scheduledPublishTime,
         };
 
-        const response = await this.fbService.createPost(post);
+        let response;
+        if (!post.imageUrl) {
+            response = await this.fbService.createPost(post);
+        } else {
+            response = await this.fbService.createPostWithImage(post);
+        }
         // TODO: check if response was successful
 
         return res

@@ -4,6 +4,7 @@ import fbRoutes from "./routes/fbRoutes";
 import { config } from "./config/dotenv";
 import cors from "cors";
 import cookieSession from "cookie-session";
+import awsRoutes from "./routes/awsRoutes";
 
 const app: Application = express();
 
@@ -26,6 +27,7 @@ app.use(
 const router = express.Router();
 router.use("/auth", authRoutes);
 router.use("/fb", fbRoutes);
+router.use("/aws", awsRoutes);
 
 app.use(`/api/${config.API_VERSION}`, router);
 

@@ -21,6 +21,6 @@ export type FacebookLoginResponse =
 export interface Post {
     pageId: string;
     text: string;
-    image?: string;
+    imageUrl?: string;
     scheduledPublishTime: string;
 }

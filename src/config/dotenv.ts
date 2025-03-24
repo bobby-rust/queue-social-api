@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+
 dotenv.config();
 
 export const config = {
@@ -13,4 +14,8 @@ export const config = {
     API_VERSION: "v1",
     JWT_SECRET: process.env.JWT_SECRET!,
     COOKIE_SECRET: process.env.COOKIE_SECRET!,
+    AWS_KEY: process.env.AWS_KEY!,
+    AWS_SECRET: process.env.AWS_SECRET!,
+    AWS_REGION: process.env.AWS_REGION!,
+    AWS_BUCKET: process.env.AWS_BUCKET!,
 };

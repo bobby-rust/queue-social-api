@@ -68,7 +68,9 @@ export default class FacebookService {
      * an ISO 8061 timestamp string, or any string parsable by PHP's strtotime()
      */
     async createPost(post: Post) {
-        const url = this.apiUrl + `/${post.pageId}/feed`;
+        const url =
+            this.apiUrl +
+            `/${post.pageId}/feed?access_token=${pageAccessToken}`;
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -76,12 +78,39 @@ export default class FacebookService {
             },
             body: JSON.stringify({
                 message: post.text,
-                published: false,
+                published: true,
                 scheduled_publish_time: post.scheduledPublishTime,
             }),
         });
 
         // TODO: If response was successful, add the post to our database
+
+        console.log(response);
+        return response;
+    }
+
+    /**
+     * Publishes a Facebook post with an image.
+     *
+     * To publish an Facebook post with an image using the Facebook API,
+     * you send a POST request to the photos endpoint. Yes, a photo is a post.
+     * No, there is no such thing as a feed post with a photo... that's just a photo post.
+     *
+     * https://developers.facebook.com/docs/pages-api/posts/
+     */
+    async createPostWithImage(post: Post) {
+        if (!post.imageUrl) {
+            throw new Error("Must supply an image");
+        }
+
+        const url = this.apiUrl + `/${post.pageId}/photos`;
+        const response = await fetch(url, {
+            method: "POST",
+            body: JSON.stringify({
+                message: post.text,
+                url: post.imageUrl,
+            }),
+        });
 
         console.log(response);
         return response;
