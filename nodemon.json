@@ -3,5 +3,5 @@
         "src"
     ],
     "ext": "ts",
-    "exec": "pnpm ts-node src/server.ts"
+    "exec": "kill -9 $(lsof -t -i :3000) 2>/dev/null; pnpm ts-node src/server.ts"
 }

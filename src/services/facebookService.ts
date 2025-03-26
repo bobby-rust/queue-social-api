@@ -14,7 +14,7 @@ export default class FacebookService {
      * Logs a user into their Facebook account
      * to get access to their pages
      */
-    async login(redirect: (url: string) => void) {
+    async login(res: Response) {
         const fbLoginUrl =
             config.FACEBOOK_LOGIN_URL +
             "/dialog/oauth?" +
@@ -23,7 +23,9 @@ export default class FacebookService {
             "&scope=pages_manage_metadata,pages_manage_posts,pages_show_list,email,public_profile,pages_manage_engagement,pages_read_engagement" +
             "&response_type=code";
 
-        return redirect(fbLoginUrl);
+        console.log(fbLoginUrl);
+
+        return res.redirect(fbLoginUrl);
     }
 
     /**
@@ -67,7 +69,7 @@ export default class FacebookService {
      * The scheduled publish time must be an integer UNIX timestamp [in seconds],
      * an ISO 8061 timestamp string, or any string parsable by PHP's strtotime()
      */
-    async createPost(post: Post) {
+    async createPost(post: Post, pageAccessToken: string) {
         const url =
             this.apiUrl +
             `/${post.pageId}/feed?access_token=${pageAccessToken}`;

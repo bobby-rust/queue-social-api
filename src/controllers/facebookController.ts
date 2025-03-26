@@ -2,10 +2,12 @@ import { Request, Response } from "express";
 import FacebookService from "../services/facebookService";
 import { Post } from "../types";
 
+// The functions in this class need to be arrow functions or fbService is undefined.
+// Don't ask me why.
 export default class FacebookController {
     fbService = new FacebookService();
 
-    async createPost(req: Request, res: Response) {
+    createPost = async (req: Request, res: Response) => {
         const { pageId, text, imageUrl, scheduledPublishTime } = req.body;
         if (!pageId) {
             return res.status(400).json({
@@ -42,7 +44,7 @@ export default class FacebookController {
 
         let response;
         if (!post.imageUrl) {
-            response = await this.fbService.createPost(post);
+            response = await this.fbService.createPost(post, ""); // TODO: actually pass the page access token
         } else {
             response = await this.fbService.createPostWithImage(post);
         }
@@ -51,9 +53,15 @@ export default class FacebookController {
         return res
             .status(201)
             .json({ data: { success: true, message: "Post scheduled" } });
-    }
+    };
 
-    async linkAccount(req: Request, res: Response) {
-        const response = await this.fbService.login(res.redirect);
-    }
+    linkAccount = async (req: Request, res: Response) => {
+        const response = await this.fbService.login(res);
+
+        return response;
+    };
+
+    callback = async (req: Request, res: Response) => {
+        return this.fbService.callback(req, res);
+    };
 }
