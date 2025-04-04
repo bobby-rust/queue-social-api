@@ -3,7 +3,6 @@ import FacebookService from "../services/facebookService";
 import { Post } from "../types";
 
 // The functions in this class need to be arrow functions or fbService is undefined.
-// Don't ask me why.
 export default class FacebookController {
     fbService = new FacebookService();
 
@@ -56,8 +55,9 @@ export default class FacebookController {
     };
 
     linkAccount = async (req: Request, res: Response) => {
-        const response = await this.fbService.login(res);
-
+        const userId = req.query.userId as string;
+        const response = await this.fbService.login(res, userId);
+        console.log("FB Login response: ", response);
         return response;
     };
 

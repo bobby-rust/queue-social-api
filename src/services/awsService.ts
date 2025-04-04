@@ -1,6 +1,7 @@
 import { config } from "../config/dotenv";
 import s3 from "../config/s3";
 import { PutObjectCommand, PutObjectCommandInput } from "@aws-sdk/client-s3";
+import mime from "mime-types";
 
 export default class AWSService {
     async upload(
@@ -24,5 +25,21 @@ export default class AWSService {
             console.error("Error uploading to S3: ", e);
             return "Error";
         }
+    }
+
+    async uploadImageFromUrl(imageUrl: string) {
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const contentType =
+            response.headers.get("content-type") || "application/octet-stream";
+
+        const ext = mime.extension(contentType) || "jpg";
+        const fileName = `image_${Date.now()}.${ext}`;
+
+        return await this.upload(buffer, fileName, contentType);
     }
 }
