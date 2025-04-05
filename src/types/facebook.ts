@@ -1,10 +1,10 @@
-export type FacebookPageResponse = {
+export interface FBPageResponse {
     id: string;
     name: string;
     picture: {
         data: FBPagePictureData;
     };
-};
+}
 
 export interface FBPagePictureData {
     width: number;
@@ -22,16 +22,9 @@ export interface FBPageInfo {
     tasks: string[];
 }
 
-export type FacebookLoginResponse =
+export type FBLoginResponse =
     | {
         userAccessToken: string;
-        pages: FacebookPageResponse[];
+        pages: FBPageResponse[];
     }
     | { error: string };
-
-export interface Post {
-    pageId: string;
-    text: string;
-    imageUrl?: string;
-    scheduledPublishTime: string;
-}

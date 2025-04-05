@@ -5,29 +5,38 @@
 import { config } from "../config/dotenv";
 import { fetchJSON } from "../lib/utils";
 import { Request, Response } from "express";
-import { FBPageInfo, FBPagePictureData, Post } from "../types";
+import { FBPageInfo, FBPagePictureData, Post, SocialProvider } from "../types";
 import { Page } from "../models/Page";
 import AWSService from "./awsService";
+import { User } from "../models/User";
 
-export default class FacebookService {
+export default class FacebookService implements SocialProvider {
     apiUrl: string = config.FACEBOOK_API_URL;
+
+    linkAccount(
+        queueSocialUserId: string,
+        redirect: (url: string) => void,
+    ): void {
+        this.login(queueSocialUserId, redirect);
+    }
 
     /**
      * Logs a user into their Facebook account
      * to get access to their pages
      */
-    async login(res: Response, userId: string) {
+    private async login(
+        queueSocialUserId: string,
+        redirect: (url: string) => void,
+    ) {
         const fbLoginUrl =
             config.FACEBOOK_LOGIN_URL +
             "/dialog/oauth?" +
             `client_id=${config.FACEBOOK_APP_ID}` +
             `&redirect_uri=${encodeURIComponent(config.REDIRECT_URI)}` +
             "&scope=pages_manage_metadata,pages_manage_posts,pages_show_list,email,public_profile,pages_manage_engagement,pages_read_engagement" +
-            `&response_type=code&state=${userId}`;
+            `&response_type=code&state=${queueSocialUserId}`;
 
-        console.log(fbLoginUrl);
-
-        return res.redirect(fbLoginUrl);
+        return redirect(fbLoginUrl);
     }
 
     /**
@@ -40,17 +49,25 @@ export default class FacebookService {
         if (!loginCode) console.error("No callback code found");
         const userAccessToken =
             await this.exchangeCodeForAccessToken(loginCode);
-        const pages = await this.getFacebookPages(userAccessToken);
+        const pages = await this.getPages(userAccessToken);
         console.log(pages);
 
         try {
             await this.addPagesToDb(pages, userId);
+            await User.findOneAndUpdate(
+                { _id: userId },
+                {
+                    $set: {
+                        accessToken: userAccessToken,
+                    },
+                },
+            );
         } catch (err) {
             console.error("Failed to add page to database: ", err);
             return err;
         }
 
-        return res.status(200).json(pages);
+        return res.status(201).redirect("http://localhost:5173/home");
     }
 
     private async addPagesToDb(pages: FBPageInfo[], userId: string) {
@@ -75,14 +92,11 @@ export default class FacebookService {
         const pageId = page.id;
         const pageAccessToken = page.access_token;
 
-        const pagePicture = await this.getFacebookPagePicture(
-            pageId,
-            pageAccessToken,
-        );
+        const pagePicture = await this.getPagePicture(pageId, pageAccessToken);
 
         console.log(pagePicture);
 
-        const imageUrl = await this.uploadImageToAWS(pagePicture.url);
+        const imageUrl = await this.uploadImageToAWS(pagePicture);
 
         await Page.findOneAndUpdate(
             { pageId: page.id },
@@ -104,18 +118,18 @@ export default class FacebookService {
     }
 
     /**
-     * Gets a facebook page's profile picture
+     * Gets a facebook page's profile picture from the Facebook API
      */
-    async getFacebookPagePicture(
+    async getPagePicture(
         pageId: string,
         pageAccessToken: string,
-    ): Promise<FBPagePictureData> {
+    ): Promise<string> {
         const url =
             this.apiUrl +
             `/${pageId}?access_token=${pageAccessToken}&fields=picture`;
 
         const response = await fetchJSON(url);
-        return response.picture.data;
+        return response.picture.data.url;
     }
 
     /**
@@ -155,12 +169,17 @@ export default class FacebookService {
      *
      * https://developers.facebook.com/docs/pages-api/posts/
      */
-    async createPostWithImage(post: Post) {
+    async createPostWithImage(
+        post: Post,
+        pageAccessToken: string,
+    ): Promise<boolean> {
         if (!post.imageUrl) {
             throw new Error("Must supply an image");
         }
 
-        const url = this.apiUrl + `/${post.pageId}/photos`;
+        const url =
+            this.apiUrl +
+            `/${post.pageId}/photos?access_token=${pageAccessToken}`;
         const response = await fetch(url, {
             method: "POST",
             body: JSON.stringify({
@@ -170,7 +189,7 @@ export default class FacebookService {
         });
 
         console.log(response);
-        return response;
+        return true;
     }
 
     /**
@@ -207,9 +226,10 @@ export default class FacebookService {
     /**
      * Gets the user ID associated with the access token
      */
-    async getUserId(accessToken: string): Promise<string> {
-        const accessTokenInspection =
-            await this.inspectAccessToken(accessToken);
+    async getUserId(socialAccountAccessToken: string): Promise<string> {
+        const accessTokenInspection = await this.inspectAccessToken(
+            socialAccountAccessToken,
+        );
         return accessTokenInspection.user_id;
     }
 
@@ -233,7 +253,7 @@ export default class FacebookService {
      * Gets a user's managed facebook pages
      * Returns an array of facebook pages
      */
-    async getFacebookPages(userAccessToken: string) {
+    async getPages(userAccessToken: string) {
         const userId = await this.getUserId(userAccessToken);
         const url =
             this.apiUrl +

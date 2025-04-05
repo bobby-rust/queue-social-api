@@ -45,7 +45,7 @@ export default class FacebookController {
         if (!post.imageUrl) {
             response = await this.fbService.createPost(post, ""); // TODO: actually pass the page access token
         } else {
-            response = await this.fbService.createPostWithImage(post);
+            response = await this.fbService.createPostWithImage(post, ""); // TODO: actually pass the page access token
         }
         // TODO: check if response was successful
 
@@ -56,12 +56,19 @@ export default class FacebookController {
 
     linkAccount = async (req: Request, res: Response) => {
         const userId = req.query.userId as string;
-        const response = await this.fbService.login(res, userId);
+        const response = this.fbService.linkAccount(userId, (url: string) => {
+            res.redirect(url);
+        });
         console.log("FB Login response: ", response);
         return response;
     };
 
     callback = async (req: Request, res: Response) => {
         return this.fbService.callback(req, res);
+    };
+
+    getAccounts = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        console.log("ID: ", id);
     };
 }

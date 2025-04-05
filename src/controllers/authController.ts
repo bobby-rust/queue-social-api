@@ -144,7 +144,6 @@ export default class AuthController {
                     });
                 }
 
-                // Why typescript, why
                 (req as any).userId = (decoded as any).id;
                 return res.status(200).json({
                     data: { success: true, message: "Already logged in" },
