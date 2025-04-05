@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import FacebookService from "../services/facebookService";
+import FacebookService from "../services/fbService";
 import { Post } from "../types";
 
 // The functions in this class need to be arrow functions or fbService is undefined.
 export default class FacebookController {
-    fbService = new FacebookService();
+    constructor(private fbService: FacebookService) { }
 
     createPost = async (req: Request, res: Response) => {
         const { pageId, text, imageUrl, scheduledPublishTime } = req.body;
@@ -49,9 +49,7 @@ export default class FacebookController {
         }
         // TODO: check if response was successful
 
-        return res
-            .status(201)
-            .json({ data: { success: true, message: "Post scheduled" } });
+        return res.status(201).json({ data: { success: true, message: "Post scheduled" } });
     };
 
     linkAccount = async (req: Request, res: Response) => {
@@ -70,5 +68,7 @@ export default class FacebookController {
     getAccounts = async (req: Request, res: Response) => {
         const { id } = req.params;
         console.log("ID: ", id);
+        const socialAccountAccessToken = "";
+        const pages = await this.fbService.getPagesFromSocialAPI(id, socialAccountAccessToken);
     };
 }

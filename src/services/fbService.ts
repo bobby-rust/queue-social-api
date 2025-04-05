@@ -5,18 +5,18 @@
 import { config } from "../config/dotenv";
 import { fetchJSON } from "../lib/utils";
 import { Request, Response } from "express";
-import { FBPageInfo, FBPagePictureData, Post, SocialProvider } from "../types";
+import { FBPageInfo, FBPagePictureData, PageResponse, Post, SocialProvider } from "../types";
 import { Page } from "../models/Page";
 import AWSService from "./awsService";
 import { User } from "../models/User";
+import DatabaseService from "./dbService";
 
 export default class FacebookService implements SocialProvider {
     apiUrl: string = config.FACEBOOK_API_URL;
 
-    linkAccount(
-        queueSocialUserId: string,
-        redirect: (url: string) => void,
-    ): void {
+    constructor(private dbService: DatabaseService) { }
+
+    linkAccount(queueSocialUserId: string, redirect: (url: string) => void): void {
         this.login(queueSocialUserId, redirect);
     }
 
@@ -24,10 +24,7 @@ export default class FacebookService implements SocialProvider {
      * Logs a user into their Facebook account
      * to get access to their pages
      */
-    private async login(
-        queueSocialUserId: string,
-        redirect: (url: string) => void,
-    ) {
+    private async login(queueSocialUserId: string, redirect: (url: string) => void) {
         const fbLoginUrl =
             config.FACEBOOK_LOGIN_URL +
             "/dialog/oauth?" +
@@ -47,9 +44,9 @@ export default class FacebookService implements SocialProvider {
         const userId = req.query.state as string;
         const loginCode = req.query.code as string;
         if (!loginCode) console.error("No callback code found");
-        const userAccessToken =
-            await this.exchangeCodeForAccessToken(loginCode);
-        const pages = await this.getPages(userAccessToken);
+        const userAccessToken = await this.exchangeCodeForAccessToken(loginCode);
+        const fbUserId = "";
+        const pages = await this.getPagesFromSocialAPI(fbUserId, userAccessToken);
         console.log(pages);
 
         try {
@@ -120,13 +117,8 @@ export default class FacebookService implements SocialProvider {
     /**
      * Gets a facebook page's profile picture from the Facebook API
      */
-    async getPagePicture(
-        pageId: string,
-        pageAccessToken: string,
-    ): Promise<string> {
-        const url =
-            this.apiUrl +
-            `/${pageId}?access_token=${pageAccessToken}&fields=picture`;
+    async getPagePicture(pageId: string, pageAccessToken: string): Promise<string> {
+        const url = this.apiUrl + `/${pageId}?access_token=${pageAccessToken}&fields=picture`;
 
         const response = await fetchJSON(url);
         return response.picture.data.url;
@@ -139,9 +131,7 @@ export default class FacebookService implements SocialProvider {
      * an ISO 8061 timestamp string, or any string parsable by PHP's strtotime()
      */
     async createPost(post: Post, pageAccessToken: string) {
-        const url =
-            this.apiUrl +
-            `/${post.pageId}/feed?access_token=${pageAccessToken}`;
+        const url = this.apiUrl + `/${post.pageId}/feed?access_token=${pageAccessToken}`;
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -169,17 +159,12 @@ export default class FacebookService implements SocialProvider {
      *
      * https://developers.facebook.com/docs/pages-api/posts/
      */
-    async createPostWithImage(
-        post: Post,
-        pageAccessToken: string,
-    ): Promise<boolean> {
+    async createPostWithImage(post: Post, pageAccessToken: string): Promise<boolean> {
         if (!post.imageUrl) {
             throw new Error("Must supply an image");
         }
 
-        const url =
-            this.apiUrl +
-            `/${post.pageId}/photos?access_token=${pageAccessToken}`;
+        const url = this.apiUrl + `/${post.pageId}/photos?access_token=${pageAccessToken}`;
         const response = await fetch(url, {
             method: "POST",
             body: JSON.stringify({
@@ -227,9 +212,7 @@ export default class FacebookService implements SocialProvider {
      * Gets the user ID associated with the access token
      */
     async getUserId(socialAccountAccessToken: string): Promise<string> {
-        const accessTokenInspection = await this.inspectAccessToken(
-            socialAccountAccessToken,
-        );
+        const accessTokenInspection = await this.inspectAccessToken(socialAccountAccessToken);
         return accessTokenInspection.user_id;
     }
 
@@ -249,18 +232,20 @@ export default class FacebookService implements SocialProvider {
         return response.access_token;
     }
 
+    private async getSocialAccountAccessToken(queueSocialUserId: string, pageId: string) { }
+
     /**
      * Gets a user's managed facebook pages
      * Returns an array of facebook pages
      */
-    async getPages(userAccessToken: string) {
-        const userId = await this.getUserId(userAccessToken);
-        const url =
-            this.apiUrl +
-            `/${userId}/accounts` +
-            `?access_token=${userAccessToken}`;
+    async getPagesFromSocialAPI(
+        fbUserId: string,
+        fbAccountAccessToken: string,
+    ): Promise<FBPageInfo[]> {
+        const url = this.apiUrl + `/${fbUserId}/accounts` + `?access_token=${fbAccountAccessToken}`;
 
         const pagesData = await fetchJSON(url);
+
         return pagesData.data || [];
     }
 }

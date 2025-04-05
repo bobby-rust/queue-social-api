@@ -1,9 +1,7 @@
 import { Router } from "express";
-import FacebookController from "../controllers/facebookController";
+import { fbController } from "../container";
 
 const router = Router();
-
-const fbController = new FacebookController();
 
 router.get("/link", fbController.linkAccount);
 router.get("/callback", fbController.callback);

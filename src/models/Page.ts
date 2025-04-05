@@ -13,7 +13,7 @@ const PageSchema = new mongoose.Schema<Page>({
     profilePicture: { type: String },
     users: [
         {
-            userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+            queueSocialUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
             pageAccessToken: { type: String, required: true },
         },
     ],

@@ -5,6 +5,7 @@ import { config } from "./config/dotenv";
 import cors from "cors";
 import cookieSession from "cookie-session";
 import awsRoutes from "./routes/awsRoutes";
+import DatabaseService from "./services/dbService";
 
 const app: Application = express();
 
@@ -32,6 +33,7 @@ app.use(
 );
 
 const router = express.Router();
+
 router.use("/auth", authRoutes);
 router.use("/fb", fbRoutes);
 router.use("/aws", awsRoutes);
