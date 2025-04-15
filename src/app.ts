@@ -11,12 +11,14 @@ const app: Application = express();
 
 app.use(
     cors({
-        origin: ["http://localhost:5173", "http://localhost:3000"], // Add frontend & API server
+        origin: ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"], // Add frontend & API server
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
     }),
 );
+
+app.options("*", cors());
 
 // Parse requests of content-type application/json
 app.use(express.json());
@@ -31,6 +33,12 @@ app.use(
         sameSite: "strict",
     }),
 );
+
+// Log all requests
+app.use((req, res, next) => {
+    console.log(`[${req.method}] ${req.path}`);
+    next();
+});
 
 const router = express.Router();
 

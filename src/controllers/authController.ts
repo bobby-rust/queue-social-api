@@ -7,6 +7,7 @@ import { config } from "../config/dotenv";
 export default class AuthController {
     async login(req: Request, res: Response) {
         const { username, password } = req.body;
+        console.log("Logging in ", username, password);
         if (!username || !password) {
             return res.status(400).json({
                 data: {

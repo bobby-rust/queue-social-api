@@ -27,7 +27,6 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
                 });
             }
 
-            // Why typescript, why
             (req as any).userId = (decoded as any).id;
             next();
         },

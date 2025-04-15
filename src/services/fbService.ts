@@ -45,9 +45,12 @@ export default class FacebookService implements SocialProvider {
         const loginCode = req.query.code as string;
         if (!loginCode) console.error("No callback code found");
         const userAccessToken = await this.exchangeCodeForAccessToken(loginCode);
-        const fbUserId = "";
+        const accessTokenInfo = await this.inspectAccessToken(userAccessToken);
+        console.log("Access token info : ", accessTokenInfo);
+        const fbUserId = accessTokenInfo.user_id;
+
         const pages = await this.getPagesFromSocialAPI(fbUserId, userAccessToken);
-        console.log(pages);
+        console.log("Pages: ", pages);
 
         try {
             await this.addPagesToDb(pages, userId);
@@ -55,7 +58,8 @@ export default class FacebookService implements SocialProvider {
                 { _id: userId },
                 {
                     $set: {
-                        accessToken: userAccessToken,
+                        fbUserAccessToken: userAccessToken,
+                        facebookUserId: fbUserId
                     },
                 },
             );
@@ -232,7 +236,16 @@ export default class FacebookService implements SocialProvider {
         return response.access_token;
     }
 
-    private async getSocialAccountAccessToken(queueSocialUserId: string, pageId: string) { }
+    // Returns an access token to the social media page matching the pageId
+    private async getSocialPageAccessToken(queueSocialUserId: string, pageId: string) { 
+        const page = await Page.findOne(
+            { pageId, "users.userId": queueSocialUserId },
+            { "users.$": 1 }
+        )
+
+        const token = page?.users?.[0]?.pageAccessToken;
+        return token;
+    }
 
     /**
      * Gets a user's managed facebook pages
@@ -242,10 +255,24 @@ export default class FacebookService implements SocialProvider {
         fbUserId: string,
         fbAccountAccessToken: string,
     ): Promise<FBPageInfo[]> {
-        const url = this.apiUrl + `/${fbUserId}/accounts` + `?access_token=${fbAccountAccessToken}`;
-
+        const url = this.apiUrl + `/${fbUserId}/accounts?access_token=${fbAccountAccessToken}`;
+        console.log("URL :" , url);
         const pagesData = await fetchJSON(url);
+        console.log("Retrieved Pages Data: ", pagesData);
 
         return pagesData.data || [];
+    }
+
+    async getSocialAccountAccessToken(queueSocialUserId: string): Promise<string | undefined> {
+        const user = await User.findOne({ _id: queueSocialUserId });
+
+        return user?.fbUserAccessToken;
+    }
+
+    async getPagesFromDB(queueSocialUserId: string) {
+        const accessToken = this.getSocialAccountAccessToken(queueSocialUserId);
+        if (!accessToken) {
+            throw new Error("Failed to get pages from database. Could not find Facebook account access token.");
+        }
     }
 }

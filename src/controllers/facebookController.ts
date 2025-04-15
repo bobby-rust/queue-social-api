@@ -66,9 +66,9 @@ export default class FacebookController {
     };
 
     getAccounts = async (req: Request, res: Response) => {
+        // ID here is queueSocialUserId
         const { id } = req.params;
         console.log("ID: ", id);
-        const socialAccountAccessToken = "";
-        const pages = await this.fbService.getPagesFromSocialAPI(id, socialAccountAccessToken);
+        const pages = await this.fbService.getPagesFromDB(id);
     };
 }
