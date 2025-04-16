@@ -49,26 +49,61 @@ export default class FacebookController {
         }
         // TODO: check if response was successful
 
-        return res.status(201).json({ data: { success: true, message: "Post scheduled" } });
+        return res
+            .status(201)
+            .json({ data: { success: true, message: "Post scheduled" } });
     };
 
     linkAccount = async (req: Request, res: Response) => {
         const userId = req.query.userId as string;
-        const response = this.fbService.linkAccount(userId, (url: string) => {
-            res.redirect(url);
-        });
-        console.log("FB Login response: ", response);
-        return response;
+        try {
+            const response = this.fbService.linkAccount(
+                userId,
+                (url: string) => {
+                    res.redirect(url);
+                },
+            );
+            console.log("FB Login response: ", response);
+
+            return res.status(200).json({ success: true, message: response });
+        } catch (err) {
+            return res.status(500).json({ success: false, message: err });
+        }
     };
 
     callback = async (req: Request, res: Response) => {
-        return this.fbService.callback(req, res);
+        try {
+            this.fbService.callback(req, res);
+            return res.status(201).redirect("http://localhost:5173/home");
+        } catch (err) {
+            return res.status(500).json({ success: false, message: err });
+        }
     };
 
-    getAccounts = async (req: Request, res: Response) => {
+    getPages = async (req: Request, res: Response) => {
         // ID here is queueSocialUserId
         const { id } = req.params;
         console.log("ID: ", id);
-        const pages = await this.fbService.getPagesFromDB(id);
+        try {
+            const pages = await this.fbService.getPagesFromSocialAPI(id);
+            const clientPages = await Promise.all(
+                pages.map(async (page) => {
+                    const img = await this.fbService.getPagePicture(
+                        page.id,
+                        page.access_token,
+                    );
+                    return {
+                        id: page.id,
+                        name: page.name,
+                        img: img,
+                    };
+                }),
+            );
+            return res
+                .status(200)
+                .json({ success: true, data: { pages: clientPages } });
+        } catch (err) {
+            return res.status(500).json({ success: false, message: err });
+        }
     };
 }

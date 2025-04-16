@@ -14,7 +14,10 @@ export interface SocialProvider {
      * An access token is saved in the database and is associated
      * with the user
      */
-    linkAccount(queueSocialUserId: string, redirect: (url: string) => void): void;
+    linkAccount(
+        queueSocialUserId: string,
+        redirect: (url: string) => void,
+    ): void;
 
     // Gets a page's profile picture from the social media's API
     getPagePicture(pageId: string, pageAccessToken: string): Promise<string>;
@@ -23,7 +26,9 @@ export interface SocialProvider {
     createPost(post: Post, pageAccessToken: string): void;
     createPostWithImage(post: Post, pageAccessToken: string): void;
 
-    getUserId(socialAccountAccessToken: string): Promise<string>;
+    // The User ID of the Social Account, not QueueSocialUserId
+    getSocialAccountUserIdFromDB(queueSocialUserId: string): Promise<string>;
+
     getPagesFromSocialAPI(
         socialAccountUserId: string,
         socialAccountAccessToken: string,

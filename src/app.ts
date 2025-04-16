@@ -5,13 +5,17 @@ import { config } from "./config/dotenv";
 import cors from "cors";
 import cookieSession from "cookie-session";
 import awsRoutes from "./routes/awsRoutes";
-import DatabaseService from "./services/dbService";
 
 const app: Application = express();
 
 app.use(
     cors({
-        origin: ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"], // Add frontend & API server
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:3000",
+        ], // Add frontend & API server
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],

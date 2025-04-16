@@ -6,5 +6,5 @@ const router = Router();
 router.get("/link", fbController.linkAccount);
 router.get("/callback", fbController.callback);
 router.post("/create-post", fbController.createPost);
-router.get("/accounts/:id", fbController.getAccounts);
+router.get("/accounts/:id", fbController.getPages);
 export default router;
