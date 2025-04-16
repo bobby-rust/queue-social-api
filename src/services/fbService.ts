@@ -203,10 +203,15 @@ export default class FacebookService implements SocialProvider {
      * The scheduled publish time must be an integer UNIX timestamp [in seconds],
      * an ISO 8061 timestamp string, or any string parsable by PHP's strtotime()
      */
-    async createPost(post: Post, pageAccessToken: string) {
+    async createPost(queueSocialUserId: string, post: Post) {
+        const pageAccessToken = await this.getSocialPageAccessTokenFromDB(
+            queueSocialUserId,
+            post.pageIds[0],
+        );
+
         const url =
             this.apiUrl +
-            `/${post.pageId}/feed?access_token=${pageAccessToken}`;
+            `/${post.pageIds[0]}/feed?access_token=${pageAccessToken}`;
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -234,17 +239,19 @@ export default class FacebookService implements SocialProvider {
      *
      * https://developers.facebook.com/docs/pages-api/posts/
      */
-    async createPostWithImage(
-        post: Post,
-        pageAccessToken: string,
-    ): Promise<boolean> {
+    async createPostWithImage(queueSocialUserId: string, post: Post) {
         if (!post.imageUrl) {
             throw new Error("Must supply an image");
         }
 
+        const pageAccessToken = await this.getSocialPageAccessTokenFromDB(
+            queueSocialUserId,
+            post.pageIds[0],
+        );
+
         const url =
             this.apiUrl +
-            `/${post.pageId}/photos?access_token=${pageAccessToken}`;
+            `/${post.pageIds[0]}/photos?access_token=${pageAccessToken}`;
         const response = await fetch(url, {
             method: "POST",
             body: JSON.stringify({
@@ -254,7 +261,7 @@ export default class FacebookService implements SocialProvider {
         });
 
         console.log(response);
-        return true;
+        return response;
     }
 
     /**
@@ -327,7 +334,10 @@ export default class FacebookService implements SocialProvider {
             { "users.$": 1 },
         );
 
+        console.log("Got page: ", page);
+
         const token = page?.users?.[0]?.pageAccessToken;
+        console.log("Got page acecss otken: ", token);
         return token;
     }
 

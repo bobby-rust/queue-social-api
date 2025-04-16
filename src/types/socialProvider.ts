@@ -23,8 +23,11 @@ export interface SocialProvider {
     getPagePicture(pageId: string, pageAccessToken: string): Promise<string>;
 
     // The post contains the pageId
-    createPost(post: Post, pageAccessToken: string): void;
-    createPostWithImage(post: Post, pageAccessToken: string): void;
+    createPost(queueSocialUserId: string, post: Post): Promise<Response>;
+    createPostWithImage(
+        queueSocialUserId: string,
+        post: Post,
+    ): Promise<Response>;
 
     // The User ID of the Social Account, not QueueSocialUserId
     getSocialAccountUserIdFromDB(queueSocialUserId: string): Promise<string>;

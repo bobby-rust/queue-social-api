@@ -7,8 +7,9 @@ export default class FacebookController {
     constructor(private fbService: FacebookService) { }
 
     createPost = async (req: Request, res: Response) => {
-        const { pageId, text, imageUrl, scheduledPublishTime } = req.body;
-        if (!pageId) {
+        const post: Post = req.body;
+        console.log("Got post: ", post);
+        if (!post.pageIds?.length) {
             return res.status(400).json({
                 data: {
                     success: false,
@@ -16,7 +17,7 @@ export default class FacebookController {
                 },
             });
         }
-        if (!text && !imageUrl) {
+        if (!post.text && !post.imageUrl) {
             return res.status(400).json({
                 data: {
                     success: false,
@@ -25,7 +26,7 @@ export default class FacebookController {
             });
         }
 
-        if (!scheduledPublishTime) {
+        if (!post.scheduledPublishTime) {
             return res.status(400).json({
                 data: {
                     success: false,
@@ -34,18 +35,18 @@ export default class FacebookController {
             });
         }
 
-        const post: Post = {
-            pageId: pageId,
-            text: text,
-            imageUrl: imageUrl,
-            scheduledPublishTime: scheduledPublishTime,
-        };
+        // lvl 10 typescripter
+        const queueSocialUserId = (req as typeof req & { userId: string })
+            .userId;
 
         let response;
         if (!post.imageUrl) {
-            response = await this.fbService.createPost(post, ""); // TODO: actually pass the page access token
+            response = await this.fbService.createPost(queueSocialUserId, post);
         } else {
-            response = await this.fbService.createPostWithImage(post, ""); // TODO: actually pass the page access token
+            response = await this.fbService.createPostWithImage(
+                queueSocialUserId,
+                post,
+            );
         }
         // TODO: check if response was successful
 

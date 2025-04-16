@@ -1,6 +1,6 @@
 export interface Post {
-    pageId: string;
+    pageIds: string[];
     text: string;
     imageUrl?: string;
-    scheduledPublishTime: string;
+    scheduledPublishTime: number; // UNIX timestamp
 }

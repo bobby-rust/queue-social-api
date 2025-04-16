@@ -5,6 +5,7 @@ import { config } from "./config/dotenv";
 import cors from "cors";
 import cookieSession from "cookie-session";
 import awsRoutes from "./routes/awsRoutes";
+import { verifyToken } from "./middleware/authJwt";
 
 const app: Application = express();
 
@@ -47,8 +48,11 @@ app.use((req, res, next) => {
 const router = express.Router();
 
 router.use("/auth", authRoutes);
-router.use("/fb", fbRoutes);
-router.use("/aws", awsRoutes);
+// Protected routes
+// Note: all requests to protected routes will contain a req.userId field
+// to identify the request from the verifyToken function
+router.use("/fb", verifyToken, fbRoutes);
+router.use("/aws", verifyToken, awsRoutes);
 
 app.use(`/api/${config.API_VERSION}`, router);
 
