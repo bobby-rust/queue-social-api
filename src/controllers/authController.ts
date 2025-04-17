@@ -87,7 +87,7 @@ export default class AuthController {
                 username: username,
                 email: email,
                 password: bcrypt.hashSync(password, 8),
-                facebookUserId: null,
+                fbUserId: null,
                 accessToken: null,
                 profilePicture: null,
             });

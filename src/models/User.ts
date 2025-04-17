@@ -1,7 +1,7 @@
 import mongoose, { Document } from "mongoose";
 
 interface User extends Document {
-    facebookUserId: string;
+    fbUserId: string;
     username: string;
     email: string;
     password: string;
@@ -11,7 +11,7 @@ interface User extends Document {
 }
 
 const UserSchema = new mongoose.Schema<User>({
-    facebookUserId: { type: String },
+    fbUserId: { type: String },
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },

@@ -80,7 +80,7 @@ export default class FacebookService implements SocialProvider {
                 {
                     $set: {
                         fbUserAccessToken: fbUserAccessToken,
-                        facebookUserId: fbUserId,
+                        fbUserId: fbUserId,
                     },
                 },
             );
@@ -163,23 +163,41 @@ export default class FacebookService implements SocialProvider {
 
         const imageUrl = await this.uploadImageToAWS(pagePicture);
 
-        await Page.findOneAndUpdate(
-            { pageId: page.id },
+        // Try updating the user's access token in the array
+        const result = await Page.updateOne(
+            {
+                pageId: page.id,
+                "users.userId": userId,
+            },
             {
                 $set: {
-                    pageId: page.id,
+                    "users.$.pageAccessToken": page.access_token,
                     name: page.name,
                     profilePicture: imageUrl,
                 },
-                $addToSet: {
-                    users: {
-                        userId: userId,
-                        pageAccessToken: page.access_token,
+            },
+        );
+
+        // If the user wasn't found, push them into the array
+        if (result.modifiedCount === 0) {
+            await Page.updateOne(
+                { pageId: page.id },
+                {
+                    $setOnInsert: {
+                        pageId: page.id,
+                        name: page.name,
+                        profilePicture: imageUrl,
+                    },
+                    $push: {
+                        users: {
+                            userId: userId,
+                            pageAccessToken: page.access_token,
+                        },
                     },
                 },
-            },
-            { upsert: true, new: true, setDefaultsOnInsert: true },
-        );
+                { upsert: true },
+            );
+        }
     }
 
     /**
