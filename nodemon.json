@@ -1,7 +1,10 @@
 {
     "watch": [
-        "src"
+        "dist"
     ],
-    "ext": "ts",
-    "exec": "pnpm ts-node src/server.ts"
+    "ext": "js",
+    "exec": "node dist/server.js",
+    "ignore": [
+        "node_modules"
+    ]
 }

@@ -5,13 +5,7 @@
 import { config } from "../config/dotenv";
 import { fetchJSON } from "../lib/utils";
 import { Request, Response } from "express";
-import {
-    FBPageInfo,
-    FBPagePictureData,
-    PageResponse,
-    Post,
-    SocialProvider,
-} from "../types";
+import { FBPageInfo, Post, SocialProvider } from "../types";
 import { Page } from "../models/Page";
 import AWSService from "./awsService";
 import { User } from "../models/User";
@@ -167,7 +161,7 @@ export default class FacebookService implements SocialProvider {
         const result = await Page.updateOne(
             {
                 pageId: page.id,
-                "users.userId": userId,
+                "users.queueSocialUserId": userId,
             },
             {
                 $set: {
@@ -190,7 +184,7 @@ export default class FacebookService implements SocialProvider {
                     },
                     $push: {
                         users: {
-                            userId: userId,
+                            queueSocialUserId: userId,
                             pageAccessToken: page.access_token,
                         },
                     },
@@ -227,6 +221,11 @@ export default class FacebookService implements SocialProvider {
             post.pageIds[0],
         );
 
+        console.log(
+            "Scheduling post for timestamp: ",
+            post.scheduledPublishTime,
+        );
+
         const url =
             this.apiUrl +
             `/${post.pageIds[0]}/feed?access_token=${pageAccessToken}`;
@@ -237,7 +236,7 @@ export default class FacebookService implements SocialProvider {
             },
             body: JSON.stringify({
                 message: post.text,
-                published: true,
+                published: false,
                 scheduled_publish_time: post.scheduledPublishTime,
             }),
         });
@@ -267,15 +266,22 @@ export default class FacebookService implements SocialProvider {
             post.pageIds[0],
         );
 
+        // The photos endpoint requires FormData, JSON is invalid
+        const form = new FormData();
+        form.append("message", post.text);
+        form.append("url", post.imageUrl);
+        form.append("published", "false");
+        form.append(
+            "scheduled_publish_time",
+            post.scheduledPublishTime.toString(),
+        );
+
         const url =
             this.apiUrl +
             `/${post.pageIds[0]}/photos?access_token=${pageAccessToken}`;
         const response = await fetch(url, {
             method: "POST",
-            body: JSON.stringify({
-                message: post.text,
-                url: post.imageUrl,
-            }),
+            body: form,
         });
 
         console.log(response);
@@ -347,8 +353,10 @@ export default class FacebookService implements SocialProvider {
         queueSocialUserId: string,
         pageId: string,
     ) {
+        console.log("Finding page: ", pageId);
+        console.log("With user: ", queueSocialUserId);
         const page = await Page.findOne(
-            { pageId, "users.userId": queueSocialUserId },
+            { pageId, "users.queueSocialUserId": queueSocialUserId },
             { "users.$": 1 },
         );
 
