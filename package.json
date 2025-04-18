@@ -4,7 +4,9 @@
     "description": "",
     "main": "server.ts",
     "scripts": {
-        "dev": "concurrently \"tsc -w\" \"nodemon --config nodemon.json\""
+        "dev": "concurrently \"tsc -w\" \"nodemon --config nodemon.json\"",
+	"build": "tsc",
+	"start": "node dist/server.js"
     },
     "keywords": [],
     "author": "",
