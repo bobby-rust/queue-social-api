@@ -52,7 +52,7 @@ export default class FacebookController {
 
         return res
             .status(201)
-            .json({ data: { success: true, message: "Post scheduled" } });
+            .json({ data: { success: true, message: response } });
     };
 
     linkAccount = async (req: Request, res: Response) => {
