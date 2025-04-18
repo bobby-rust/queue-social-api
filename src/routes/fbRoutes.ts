@@ -9,5 +9,6 @@ router.get("/callback", fbController.callback);
 // Protected
 router.get("/link", verifyToken, fbController.linkAccount);
 router.post("/create-post", verifyToken, fbController.createPost);
+router.get("/posts", verifyToken, fbController.getPosts);
 router.get("/accounts/:id", verifyToken, fbController.getPages);
 export default router;

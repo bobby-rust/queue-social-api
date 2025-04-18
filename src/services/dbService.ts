@@ -22,6 +22,29 @@ export default class DatabaseService {
         }
     }
 
+    // Returns all posts for the pages that the user has access to,
+    // not just the posts the user has created themselves
+    // Ex. if multiple users have access to the same page, both users will get
+    // both the posts that they created and the posts that all other users with access
+    // to the page have created
+    async getPostsFromDB(queueSocialUserId: string) {
+        // Get the pages associated with the user
+        const pages = await this.getPagesFromDB(queueSocialUserId);
+
+        // Get the posts associated with the pages
+        const posts = [];
+        for (const page of pages) {
+            const pageId = page.pageId;
+            // All posts that contain the pageId in the pageIds array
+            const postsForPage = await Post.find({
+                pageIds: { $in: [pageId] },
+            });
+
+            posts.push(...postsForPage);
+        }
+        return posts;
+    }
+
     async getSocialAccountAccessTokenFromDB(
         queueSocialUserId: string,
     ): Promise<string> {
@@ -37,7 +60,9 @@ export default class DatabaseService {
     }
 
     async getPagesFromDB(queueSocialUserId: string) {
-        const pages = await Page.find({ users: { $in: [queueSocialUserId] } });
+        const pages = await Page.find({
+            "users.queueSocialUserId": queueSocialUserId,
+        });
         return pages;
     }
 

@@ -315,4 +315,9 @@ export default class FacebookService implements SocialProvider {
     }
 
     async getPagesFromDB(queueSocialUserId: string) { }
+
+    async getPostsFromDB(queueSocialUserId: string) {
+        const posts = await this.dbService.getPostsFromDB(queueSocialUserId);
+        return posts;
+    }
 }

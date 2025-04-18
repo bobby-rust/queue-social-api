@@ -1,13 +1,29 @@
 import { Request, Response } from "express";
 import FacebookService from "../services/fbService";
-import { Post } from "../types";
+import { IPost } from "../types";
 
 // The functions in this class need to be arrow functions or fbService is undefined.
 export default class FacebookController {
     constructor(private fbService: FacebookService) { }
 
+    getPosts = async (req: Request, res: Response) => {
+        // This will be attached to the request object
+        // as a result of the JWT auth middleware
+        const queueSocialUserId = (req as typeof req & { userId: string })
+            .userId;
+
+        try {
+            const posts =
+                await this.fbService.getPostsFromDB(queueSocialUserId);
+            return res.status(200).json({ success: true, message: posts });
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: err });
+        }
+    };
+
     createPost = async (req: Request, res: Response) => {
-        const post: Post = req.body;
+        const post: IPost = req.body;
         console.log("Got post: ", post);
         if (!post.pageIds?.length) {
             return res.status(400).json({
