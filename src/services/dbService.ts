@@ -32,16 +32,11 @@ export default class DatabaseService {
         const pages = await this.getPagesFromDB(queueSocialUserId);
 
         // Get the posts associated with the pages
-        const posts = [];
-        for (const page of pages) {
-            const pageId = page.pageId;
-            // All posts that contain the pageId in the pageIds array
-            const postsForPage = await Post.find({
-                pageIds: { $in: [pageId] },
-            });
+        const pageIds = pages.map((p) => p.pageId);
 
-            posts.push(...postsForPage);
-        }
+        const posts = await Post.find({
+            pageIds: { $in: pageIds },
+        });
         return posts;
     }
 
