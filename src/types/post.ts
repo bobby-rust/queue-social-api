@@ -1,4 +1,4 @@
-export interface Post {
+export interface IPost {
     pageIds: string[];
     text: string;
     imageUrl?: string;

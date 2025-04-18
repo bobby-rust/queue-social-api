@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { Post } from "../types";
+import { IPost } from "../types";
 
-interface PostDocument extends Post, Document {
+interface PostDocument extends IPost, Document {
     pageIds: string[];
     text: string;
     imageUrl?: string;

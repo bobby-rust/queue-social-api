@@ -67,8 +67,6 @@ export default class AuthController {
 
     async signUp(req: Request, res: Response) {
         const { username, email, password } = req.body;
-        console.log(req);
-        console.log(req.body);
         if (!username || !email || !password) {
             return res
                 .status(400) // 400 Bad Request

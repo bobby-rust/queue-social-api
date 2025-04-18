@@ -6,7 +6,7 @@ import { config } from "../config/dotenv";
 import { fetchJSON } from "../lib/utils";
 import { Request, Response } from "express";
 import { FBPageInfo, SocialProvider } from "../types";
-import { Post } from "../types";
+import { IPost } from "../types";
 import { Page } from "../models/Page";
 import { User } from "../models/User";
 import DatabaseService from "./dbService";
@@ -49,14 +49,12 @@ export default class FacebookService implements SocialProvider {
      */
     async callback(req: Request, res: Response) {
         const queueSocialUserId = req.query.state as string;
-        console.log("Got queueSocialUserId in callback: ", queueSocialUserId);
         const loginCode = req.query.code as string;
         if (!loginCode) console.error("No callback code found");
         const fbUserAccessToken =
             await this.exchangeCodeForAccessToken(loginCode);
         const accessTokenInfo =
             await this.inspectAccessToken(fbUserAccessToken);
-        console.log("Access token info : ", accessTokenInfo);
         const fbUserId = accessTokenInfo.user_id;
 
         const pages = await this.getPagesFromSocialAPI(
@@ -64,10 +62,8 @@ export default class FacebookService implements SocialProvider {
             fbUserId,
             fbUserAccessToken,
         );
-        console.log("Pages: ", pages);
 
         try {
-            console.log("queueSocialUserId: ", queueSocialUserId);
             await this.dbService.addPagesToDB(queueSocialUserId, pages);
             await User.findOneAndUpdate(
                 { _id: queueSocialUserId },
@@ -107,14 +103,12 @@ export default class FacebookService implements SocialProvider {
             }
         }
 
-        console.log("Got account access token: ", fbUserAccessToken);
         // TODO: This user ID can be retrieved from the database instead
         if (!fbUserId) {
             fbUserId =
                 await this.getSocialAccountUserIdFromAccessToken(
                     fbUserAccessToken,
                 );
-            console.log("FB ID: ", fbUserId);
             if (!fbUserId) {
                 throw new Error("Failed to get Facebook User ID");
             }
@@ -122,9 +116,7 @@ export default class FacebookService implements SocialProvider {
         const url =
             this.apiUrl +
             `/${fbUserId}/accounts?access_token=${fbUserAccessToken}`;
-        console.log("URL :", url);
         const pagesData = await fetchJSON(url);
-        console.log("Retrieved Pages Data: ", pagesData);
 
         return pagesData.data || [];
     }
@@ -150,35 +142,38 @@ export default class FacebookService implements SocialProvider {
      * The scheduled publish time must be an integer UNIX timestamp [in seconds],
      * an ISO 8061 timestamp string, or any string parsable by PHP's strtotime()
      */
-    async createPost(queueSocialUserId: string, post: Post) {
-        const pageAccessToken = await this.getSocialPageAccessTokenFromDB(
-            queueSocialUserId,
-            post.pageIds[0],
-        );
+    async createPost(queueSocialUserId: string, post: IPost) {
+        let response = new Response();
+        for (const pageId of post.pageIds) {
+            const pageAccessToken = await this.getSocialPageAccessTokenFromDB(
+                queueSocialUserId,
+                pageId,
+            );
 
-        console.log(
-            "Scheduling post for timestamp: ",
-            post.scheduledPublishTime,
-        );
+            console.log(
+                "Scheduling post for timestamp: ",
+                post.scheduledPublishTime,
+            );
 
-        const url =
-            this.apiUrl +
-            `/${post.pageIds[0]}/feed?access_token=${pageAccessToken}`;
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                message: post.text,
-                published: false,
-                scheduled_publish_time: post.scheduledPublishTime,
-            }),
-        });
+            const url =
+                this.apiUrl + `/${pageId}/feed?access_token=${pageAccessToken}`;
+            response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    message: post.text,
+                    published: false,
+                    scheduled_publish_time: post.scheduledPublishTime,
+                }),
+            });
 
-        // TODO: If response was successful, add the post to our database
-
-        console.log(response);
+            console.log("Facebook API create post response: ", response);
+        }
+        // Only add the post to the db once
+        const result = await this.dbService.addPostToDB(post);
+        console.log("Add post to db result: ", result);
         return response;
     }
 
@@ -191,35 +186,41 @@ export default class FacebookService implements SocialProvider {
      *
      * https://developers.facebook.com/docs/pages-api/posts/
      */
-    async createPostWithImage(queueSocialUserId: string, post: Post) {
+    async createPostWithImage(queueSocialUserId: string, post: IPost) {
         if (!post.imageUrl) {
             throw new Error("Must supply an image");
         }
 
-        const pageAccessToken = await this.getSocialPageAccessTokenFromDB(
-            queueSocialUserId,
-            post.pageIds[0],
-        );
+        let response = new Response();
+        for (const pageId of post.pageIds) {
+            const pageAccessToken = await this.getSocialPageAccessTokenFromDB(
+                queueSocialUserId,
+                pageId,
+            );
 
-        // The photos endpoint requires FormData, JSON is invalid
-        const form = new FormData();
-        form.append("message", post.text);
-        form.append("url", post.imageUrl);
-        form.append("published", "false");
-        form.append(
-            "scheduled_publish_time",
-            post.scheduledPublishTime.toString(),
-        );
+            // The photos endpoint requires FormData, JSON is invalid
+            const form = new FormData();
+            form.append("message", post.text);
+            form.append("url", post.imageUrl);
+            form.append("published", "false");
+            form.append(
+                "scheduled_publish_time",
+                post.scheduledPublishTime.toString(),
+            );
 
-        const url =
-            this.apiUrl +
-            `/${post.pageIds[0]}/photos?access_token=${pageAccessToken}`;
-        const response = await fetch(url, {
-            method: "POST",
-            body: form,
-        });
+            const url =
+                this.apiUrl +
+                `/${pageId}/photos?access_token=${pageAccessToken}`;
+            response = await fetch(url, {
+                method: "POST",
+                body: form,
+            });
 
-        console.log(response);
+            console.log("Facebook API create post response: ", response);
+        }
+        // Only add the post to the db once
+        const result = await this.dbService.addPostToDB(post);
+        console.log("Add post to db result: ", result);
         return response;
     }
 
@@ -263,7 +264,6 @@ export default class FacebookService implements SocialProvider {
         const accessTokenInspection = await this.inspectAccessToken(
             socialAccountAccessToken,
         );
-        console.log("Access token inspection: ", accessTokenInspection);
         return accessTokenInspection.user_id;
     }
 

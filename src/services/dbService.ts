@@ -1,11 +1,26 @@
 import { Page } from "../models/Page";
-import { FBPageInfo, Post } from "../types";
+import Post from "../models/Post";
+import { FBPageInfo, IPost } from "../types";
 import AWSService from "./awsService";
 
 export default class DatabaseService {
     constructor(private aws: AWSService) { }
 
-    async addPostToDB(post: Post) { }
+    async addPostToDB(post: IPost) {
+        console.log("Adding post to db");
+        try {
+            const result = await Post.create({
+                pageIds: post.pageIds,
+                text: post.text,
+                imageUrl: post.imageUrl || null,
+                scheduledPublishTime: post.scheduledPublishTime,
+            });
+            return result;
+        } catch (err) {
+            console.error(err);
+            return err;
+        }
+    }
 
     async getSocialAccountAccessTokenFromDB(
         queueSocialUserId: string,
@@ -23,7 +38,6 @@ export default class DatabaseService {
 
     async getPagesFromDB(queueSocialUserId: string) {
         const pages = await Page.find({ users: { $in: [queueSocialUserId] } });
-        console.log(pages);
         return pages;
     }
 

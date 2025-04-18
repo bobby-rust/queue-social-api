@@ -1,4 +1,4 @@
-import { Post } from "./index";
+import { IPost } from "./index";
 
 /**
  * An account has one or more pages
@@ -23,10 +23,10 @@ export interface SocialProvider {
     getPagePicture(pageId: string, pageAccessToken: string): Promise<string>;
 
     // The post contains the pageId
-    createPost(queueSocialUserId: string, post: Post): Promise<Response>;
+    createPost(queueSocialUserId: string, post: IPost): Promise<Response>;
     createPostWithImage(
         queueSocialUserId: string,
-        post: Post,
+        post: IPost,
     ): Promise<Response>;
 
     // The User ID of the Social Account, not QueueSocialUserId

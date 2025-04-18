@@ -5,7 +5,6 @@ export default class AWSController {
     aws = new AWSService();
 
     uploadImage = async (req: Request, res: Response) => {
-        console.log(req);
         if (!req.file) {
             return res.status(400).json({
                 data: {
