@@ -27,27 +27,17 @@ export default class DatabaseService {
         return pages;
     }
 
-    async addPagesToDB(
-        queueSocialUserId: string,
-        pages: (FBPageInfo & { profilePicture: string })[],
-    ) {
+    async addPagesToDB(queueSocialUserId: string, pages: FBPageInfo[]) {
         for (const page of pages) {
             await this.addPageToDB(queueSocialUserId, page);
         }
     }
 
-    async addPageToDB(
-        queueSocialUserId: string,
-        page: FBPageInfo & { profilePicture: string },
-    ) {
+    async addPageToDB(queueSocialUserId: string, page: FBPageInfo) {
         // Get the user
         // Check if the page exists
         // if  the page exists, add the user to the page
         // else, get the page's picture, and add the page to the database
-
-        // FIXME: I probably shouldn't store profile pictures on AWS,
-        // instead just fetch them each time it is needed from the Facebook API
-        const imageUrl = await this.aws.uploadImageFromUrl(page.profilePicture);
 
         // Try updating the user's access token in the array
         const result = await Page.updateOne(
@@ -59,7 +49,6 @@ export default class DatabaseService {
                 $set: {
                     "users.$.pageAccessToken": page.access_token,
                     name: page.name,
-                    profilePicture: imageUrl,
                 },
             },
         );
@@ -72,7 +61,6 @@ export default class DatabaseService {
                     $setOnInsert: {
                         pageId: page.id,
                         name: page.name,
-                        profilePicture: imageUrl,
                     },
                     $push: {
                         users: {

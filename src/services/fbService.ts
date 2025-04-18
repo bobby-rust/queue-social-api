@@ -5,9 +5,9 @@
 import { config } from "../config/dotenv";
 import { fetchJSON } from "../lib/utils";
 import { Request, Response } from "express";
-import { FBPageInfo, Post, SocialProvider } from "../types";
+import { FBPageInfo, SocialProvider } from "../types";
+import { Post } from "../types";
 import { Page } from "../models/Page";
-import AWSService from "./awsService";
 import { User } from "../models/User";
 import DatabaseService from "./dbService";
 
@@ -68,7 +68,7 @@ export default class FacebookService implements SocialProvider {
 
         try {
             console.log("queueSocialUserId: ", queueSocialUserId);
-            await this.addPagesToDb(pages, queueSocialUserId);
+            await this.dbService.addPagesToDB(queueSocialUserId, pages);
             await User.findOneAndUpdate(
                 { _id: queueSocialUserId },
                 {
