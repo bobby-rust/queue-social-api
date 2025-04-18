@@ -8,14 +8,28 @@ import awsRoutes from "./routes/awsRoutes";
 
 const app: Application = express();
 
+app.use((req, res, next) => {
+	console.log("Incoming origin: ", req.headers.origin);
+	next();
+});
+
 app.use(
     cors({
-        origin: [
-            "http://localhost:5173",
-            "http://localhost:3000",
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:3000",
-        ], // Add frontend & API server
+        origin: function (origin, callback) {
+		const allowedOrigins = [
+		    "http://localhost:5173",
+		    "http://localhost:3000",
+		    "http://127.0.0.1:5173",
+		    "http://127.0.0.1:3000",
+		    "https://queuesocial.robrust.dev"
+		];
+		if (!origin || allowedOrigins.includes(origin)) {
+			callback(null, true);
+		} else {
+			console.warn("Blocked by CORS:", origin);
+			callback(new Error("Blocked by CORS: " + origin));
+		}
+	},	
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
